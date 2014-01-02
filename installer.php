@@ -25,7 +25,7 @@ function tb_install()
                 'name'  => 'White',
             ),
         ),
-    ));
+    ), '', 'no');
 }
 
 function tb_uninstall()
