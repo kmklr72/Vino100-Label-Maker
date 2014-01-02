@@ -3,6 +3,12 @@
 function tb_install()
 {
     add_option('tb_label_maker_config', array(
+        'countries' => array(
+            array(
+                'slug'  => 'united_states',
+                'name'  => 'United States',
+            ),
+        ),
         'regions'   => array(
             array(
                 'slug'  => 'united_states',
