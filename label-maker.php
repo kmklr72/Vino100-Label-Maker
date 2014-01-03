@@ -31,7 +31,13 @@ class TB_Label_Maker
      */
     public function __construct()
     {
+        add_action('admin_init', array($this, 'admin_init'));
         add_action('admin_menu', array($this, 'admin_menu'));
+    }
+
+    public function admin_init()
+    {
+        $this->config = get_option('tb_label_maker_config');
     }
 
     public function admin_menu()
@@ -57,12 +63,11 @@ class TB_Label_Maker
 
     public function label_maker_form()
     {
-        $config = get_option('tb_label_maker_config');
-
         if (isset($_POST['createlabel']))
         {
-            self::save_new_options();
-            self::build_label();
+            $this->save_new_options();
+            $this->build_label();
+            die('done');
         }
         else
         {
@@ -97,7 +102,7 @@ class TB_Label_Maker
 		<th scope="row"><label for="type">Wine Type </label></th>
 		<td>
             <select name="type" id="type">
-                <?php foreach ($config['types'] as $type): ?>
+                <?php foreach ($this->config['types'] as $type): ?>
                 <option value="<?php echo $type['slug']; ?>"><?php echo $type['name']; ?></option>
                 <?php endforeach; ?>
 
@@ -109,7 +114,7 @@ class TB_Label_Maker
 		<th scope="row"><label for="region">Region </label></th>
 		<td>
             <select name="region" id="region">
-                <?php foreach ($config['regions'] as $region): ?>
+                <?php foreach ($this->config['regions'] as $region): ?>
                 <option value="<?php echo $region['slug']; ?>"><?php echo $region['name']; ?></option>
                 <?php endforeach; ?>
 
@@ -121,7 +126,7 @@ class TB_Label_Maker
 		<th scope="row"><label for="country">Country / State </label></th>
 		<td>
             <select name="country" id="country">
-                <?php foreach ($config['countries'] as $type): ?>
+                <?php foreach ($this->config['countries'] as $type): ?>
                 <option value="<?php echo $type['slug']; ?>"><?php echo $type['name']; ?></option>
                 <?php endforeach; ?>
 
@@ -248,29 +253,31 @@ jQuery("#country").otherize("Add new country");
 
     protected function save_new_options()
     {
-        if (!$this->in_multiarray($_POST['country']))
+        if (!$this->in_multiarray($_POST['country'], $this->config['countries']))
         {
-            $config['countries'][] = array(
+            $this->config['countries'][] = array(
                 'slug'  => strtolower(str_replace(' ', '_', $_POST['country'])),
                 'name'  => $_POST['country'],
             );
         }
 
-        if (!$this->in_multiarray($_POST['region']))
+        if (!$this->in_multiarray($_POST['region'], $this->config['regions']))
         {
-            $config['regions'][] = array(
+            $this->config['regions'][] = array(
                 'slug'  => strtolower(str_replace(' ', '_', $_POST['region'])),
                 'name'  => $_POST['region'],
             );
         }
 
-        if (!$this->in_multiarray($_POST['type']))
+        if (!$this->in_multiarray($_POST['type'], $this->config['types']))
         {
-            $config['regions'][] = array(
+            $this->config['types'][] = array(
                 'slug'  => strtolower(str_replace(' ', '_', $_POST['type'])),
                 'name'  => $_POST['type'],
             );
         }
+
+        update_option('tb_label_maker_config', $this->config);
     }
 
     protected function build_label()
@@ -288,7 +295,7 @@ jQuery("#country").otherize("Add new country");
             }
             elseif (is_array($value))
             {
-                if (self::in_multiarray($elem, $value))
+                if ($this->in_multiarray($elem, $value))
                 {
                     return true;
                 }
