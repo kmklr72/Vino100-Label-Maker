@@ -21,19 +21,6 @@ html, body {
     padding: 0;
 }
 
-/*.label {
-    width: 384px;
-    height: 294px;
-    width: 4in;
-    height: 90mm;
-    border: #000 solid 1px;
-    position: relative;
-}
-
-.text-center {
-    text-align: center;
-}*/
-
 h3, p {
     margin: 0;
 }
@@ -54,22 +41,13 @@ p {
     margin-bottom: -20mm;*/
 }
 
-.fill:after {
-    /*content: "";
-    display: block;
-    height: 20mm;*/
-}
-
 .label td {
     border: #000 solid 1px;
 }
 
 .logo {
-    /*background-image: url('./img/vino-logo.png');
-    background-size: auto 15mm;
-    background-repeat: no-repeat;*/
     height: 20mm;
-    margin: 1mm 5mm 1mm 1mm;
+    margin: 2mm 5mm 1mm 2mm;
     padding-bottom: 2mm;
 }
 
@@ -101,8 +79,6 @@ img.logo-resize {
 }
 
 .vendor, .title {
-    /*height: 15mm;*/
-    /*padding-bottom: 1mm;*/
     min-height: 8mm;
     max-height: 16mm;
     overflow: hidden;
@@ -128,15 +104,7 @@ img.logo-resize {
 }
 
 .price {
-    /*display: inline-block;
-    line-height: 20mm;
-    vertical-align: bottom;*/
     margin-top: 17mm;
     margin-right: 2mm;
     font-size: 20px;
 }
-
-/*.vendor, .title {
-    padding-top: 2mm;
-    padding-bottom: 2mm;
-}*/

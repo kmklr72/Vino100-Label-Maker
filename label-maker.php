@@ -126,10 +126,6 @@ class TB_Label_Maker
 <table class="form-table">
     <?php wp_nonce_field('wine_label_maker', 'wine_label_maker'); ?>
 
-	<!--<tr class="form-field form-required">
-		<th scope="row"><label for="product_name">Product Name <span class="description">(required)</span></label></th>
-		<td><input name="product_name" type="text" id="product_name" class="regular-text" value="" aria-required="true" /></td>
-	</tr>-->
 	<tr class="form-field">
 		<th scope="row"><label for="product_desc">Description </label></th>
 		<td><textarea name="desc" id="product_desc" rows="5" cols="30"><?php echo $meta['desc']; ?></textarea></td>
@@ -146,6 +142,7 @@ class TB_Label_Maker
 		<th scope="row"><label for="type">Wine Type </label></th>
 		<td>
             <select name="type" id="type">
+                <option value=""<?php selected('', $meta['type']); ?>>-</option>
                 <?php foreach ($this->config['types'] as $type): ?>
                 <option value="<?php echo $type['slug']; ?>"<?php selected($type['slug'], $meta['type']); ?>><?php echo $type['name']; ?></option>
                 <?php endforeach; ?>
@@ -158,6 +155,7 @@ class TB_Label_Maker
 		<th scope="row"><label for="region">Region </label></th>
 		<td>
             <select name="region" id="region">
+                <option value=""<?php selected('', $meta['region']); ?>>-</option>
                 <?php foreach ($this->config['regions'] as $region): ?>
                 <option value="<?php echo $region['slug']; ?>"<?php selected($region['slug'], $meta['region']); ?>><?php echo $region['name']; ?></option>
                 <?php endforeach; ?>
@@ -170,6 +168,7 @@ class TB_Label_Maker
 		<th scope="row"><label for="country">Country / State </label></th>
 		<td>
             <select name="country" id="country">
+                <option value=""<?php selected('', $meta['country']); ?>>-</option>
                 <?php foreach ($this->config['countries'] as $country): ?>
                 <option value="<?php echo $country['slug']; ?>"<?php selected($country['slug'], $meta['country']); ?>><?php echo $country['name']; ?></option>
                 <?php endforeach; ?>
@@ -296,7 +295,6 @@ jQuery("#country").otherize("Add new country");
     {
         // Check if it is for our CPT and we are authorized
         if (!isset($_POST['wine_label_maker'])
-            //|| !wp_verify_nonce($_POST['wine_label_maker'], 'wine_label_maker')
             || !check_admin_referer('wine_label_maker', 'wine_label_maker')
             || !current_user_can('edit_post', $post_id))
         {
@@ -313,7 +311,6 @@ jQuery("#country").otherize("Add new country");
         $this->save_new_options();
 
         $wine_meta = array(
-            //'name'      => $_POST['product_name'],
             'desc'      => $_POST['desc'],
             'vendor'    => $_POST['vendor'],
             'year'      => $_POST['year'],
@@ -470,10 +467,7 @@ jQuery("#country").otherize("Add new country");
     {
         $page = add_submenu_page('edit.php?post_type=wine_label', 'Print Labels', 'Print Labels', 'publish_posts', 'print-labels', array($this, 'print_labels'));
 
-        //$page = add_management_page('Vino Label Maker', 'Vino Label Maker', 'publish_pages', 'vino-label-maker', array($this, 'label_maker_form'));
-
         add_action('admin_print_styles-' . $page, array($this, 'admin_styles'));
-        //add_action('admin_print_scripts-' . $page, array($this, 'admin_scripts'));
     }
 
     public function admin_styles()
@@ -489,43 +483,6 @@ jQuery("#country").otherize("Add new country");
         wp_enqueue_script('vino100-otherize', TB_PLUGIN_URL . 'jquery.otherize.js');
     }
 
-    /*public function print_labels()
-    {
-        ob_end_clean();
-        $labels = get_posts(array(
-            'include'       => $_GET['ids'],
-            'post_type'     => 'wine_label',
-            'post_status'   => 'publish',
-        ));
-
-        include TB_PLUGIN_DIR . 'lib/tcpdf/tcpdf.php';
-
-        $pdf = new TCPDF('L', 'mm', PDF_PAGE_FORMAT, true, 'UTF-8', false);
-        $pdf->setFontSubsetting(false);
-        $pdf->SetMargins(10, 10, 10);
-        $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
-
-        $pdf->setPrintHeader(false);
-        $pdf->setPrintFooter(false);
-
-        // Build label
-        $pdf->AddPage();
-
-        //$pdf->setCellPaddings(1, 1, 1, 1);
-        //$pdf->setCellMargins(1, 1, 1, 1);
-
-        //$pdf->Image(TB_PLUGIN_DIR . 'img/vino-logo.png', $pdf->GetAbsX() + 1, $pdf->GetY() - 0.15, 1.5, .85, 'png', '', 'top-left', true);
-        $pdf->Image(TB_PLUGIN_DIR . 'img/vino-logo.png', $pdf->GetAbsX() + 2, $pdf->GetY() + 2, 45, 0, 'png', '', 'top-left', true);
-
-        $pdf->Text($pdf->GetAbsX() + 2, $pdf->GetY() + 2, 'Red', false, false, true, 0, 0, 'R');
-
-        $pdf->MultiCell(101.6, 90, '', 1, 'C', 0, 0);
-
-        // Output PDF
-        $pdf->Output('qr-codes.pdf', 'I');
-        exit();
-    }*/
-
     public function print_labels()
     {
         $labels = get_posts(array(
@@ -540,27 +497,6 @@ jQuery("#country").otherize("Add new country");
         $meta = get_post_meta($label->ID, 'wine_data', true); ?>
     <tr>
         <td class="label">
-            <!--<table>
-                <tr>
-                    <td colspan="2" class="logo">
-                        <div class="bold right">Red</div>
-                        <br style="clear:both;" />
-                        <div class="bold right">Lodi, California</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td><?php if (!empty($meta['vendor'])): ?><h3 class="text-center"><?php echo $meta['vendor']; ?></h3><?php endif; ?></td>
-                </tr>
-                <tr>
-                    <td><?php if (!empty($label->post_title)): ?><h3 class="text-center"><?php echo $label->post_title; ?><?php if (isset($meta)) { echo ' '.$meta['year']; } ?></h3><?php endif; ?></td>
-                </tr>
-                <tr>
-                    <td><?php if (!empty($meta['desc'])): ?><p class="text-center"><?php echo $meta['desc']; ?></p><?php endif; ?></td>
-                </tr>
-                <tr>
-                    <td><?php if (!empty($meta['price'])): ?>$<?php echo $meta['price']; ?><?php endif; ?></td>
-                </tr>
-            </table>-->
             <div class="fill">
                 <div class="logo">
                     <span><img class="logo-resize" src="<?php echo TB_PLUGIN_URL; ?>img/vino-logo.png" /></span>
@@ -603,8 +539,6 @@ jQuery("#country").otherize("Add new country");
                     }
                     ?></h3>
                 <?php if (!empty($meta['desc'])): ?><p class="desc text-center"><?php echo $meta['desc']; ?></p><?php endif; ?>
-                <!--<span class="price right"><?php if (!empty($meta['price'])) { echo $meta['price']; } ?></span>-->
-                <!--<?php if (!empty($meta['price'])): ?><span style="position: absolute; bottom: 0.8in; left: 3.65in;">$<?php echo $meta['price']; ?></span><?php endif; ?>-->
             </div>
             <div class="footer">
                 <span class="meters">
@@ -633,20 +567,6 @@ jQuery("#country").otherize("Add new country");
                                 echo '<td><img width="18" height="14" src="' . TB_PLUGIN_URL . 'img/' . $color . '_' . $i . '.gif" /></td>';
                             }
                             ?>
-                            <!--<td><img height="15" name="t1" src="<?php echo TB_PLUGIN_URL; ?>img/white_1.gif" width="18" /></td>
-                            <td><img height="15" name="t2" src="<?php echo TB_PLUGIN_URL; ?>img/white_2.gif" width="18" /></td>
-                            <td><img height="15" name="t3" src="<?php echo TB_PLUGIN_URL; ?>img/white_3.gif" width="18" /></td>
-                            <td><img height="15" name="t4" src="<?php echo TB_PLUGIN_URL; ?>img/white_4.gif" width="18" /></td>
-                            <td><img height="15" name="t5" src="<?php echo TB_PLUGIN_URL; ?>img/white_5.gif" width="18" /></td>
-                            <td><img height="15" name="t6" src="<?php echo TB_PLUGIN_URL; ?>img/white_6.gif" width="18" /></td>
-                            <td><img height="15" name="t7" src="<?php echo TB_PLUGIN_URL; ?>img/white_7.gif" width="18" /></td>
-                            <td><img height="15" name="t8" src="<?php echo TB_PLUGIN_URL; ?>img/white_8.gif" width="18" /></td>
-                            <td><img height="15" name="t9" src="<?php echo TB_PLUGIN_URL; ?>img/white_9.gif" width="18" /></td>
-                            <td><img height="15" name="t10" src="<?php echo TB_PLUGIN_URL; ?>img/white_10.gif" width="18" /></td>
-                            <td><img height="15" name="t11" src="<?php echo TB_PLUGIN_URL; ?>img/white_11.gif" width="18" /></td>
-                            <td><img height="15" name="t12" src="<?php echo TB_PLUGIN_URL; ?>img/white_12.gif" width="18" /></td>
-                            <td><img height="15" name="t13" src="<?php echo TB_PLUGIN_URL; ?>img/white_13.gif" width="18" /></td>
-                            <td><img height="15" name="t14" src="<?php echo TB_PLUGIN_URL; ?>img/white_14.gif" width="18" /></td>-->
                         </tr>
                     </table>
 
@@ -675,20 +595,6 @@ jQuery("#country").otherize("Add new country");
                                 echo '<td><img width="18" height="14" src="' . TB_PLUGIN_URL . 'img/' . $color . '_' . $i . '.gif" /></td>';
                             }
                             ?>
-                            <!--<td><img height="15" name="b1" src="<?php echo TB_PLUGIN_URL; ?>img/white_1.gif" width="18" /></td>
-                            <td><img height="15" name="b2" src="<?php echo TB_PLUGIN_URL; ?>img/white_2.gif" width="18" /></td>
-                            <td><img height="15" name="b3" src="<?php echo TB_PLUGIN_URL; ?>img/white_3.gif" width="18" /></td>
-                            <td><img height="15" name="b4" src="<?php echo TB_PLUGIN_URL; ?>img/white_4.gif" width="18" /></td>
-                            <td><img height="15" name="b5" src="<?php echo TB_PLUGIN_URL; ?>img/white_5.gif" width="18" /></td>
-                            <td><img height="15" name="b6" src="<?php echo TB_PLUGIN_URL; ?>img/white_6.gif" width="18" /></td>
-                            <td><img height="15" name="b7" src="<?php echo TB_PLUGIN_URL; ?>img/white_7.gif" width="18" /></td>
-                            <td><img height="15" name="b8" src="<?php echo TB_PLUGIN_URL; ?>img/white_8.gif" width="18" /></td>
-                            <td><img height="15" name="b9" src="<?php echo TB_PLUGIN_URL; ?>img/white_9.gif" width="18" /></td>
-                            <td><img height="15" name="b10" src="<?php echo TB_PLUGIN_URL; ?>img/white_10.gif" width="18" /></td>
-                            <td><img height="15" name="b11" src="<?php echo TB_PLUGIN_URL; ?>img/white_11.gif" width="18" /></td>
-                            <td><img height="15" name="b12" src="<?php echo TB_PLUGIN_URL; ?>img/white_12.gif" width="18" /></td>
-                            <td><img height="15" name="b13" src="<?php echo TB_PLUGIN_URL; ?>img/white_13.gif" width="18" /></td>
-                            <td><img height="15" name="b14" src="<?php echo TB_PLUGIN_URL; ?>img/white_14.gif" width="18" /></td>-->
                         </tr>
                     </table>
                 </span>
