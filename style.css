@@ -1,3 +1,11 @@
 .form-table td {
     padding: 0;
 }
+
+#wine-label-form .handlediv, #wine-label-form .hndle {
+    display: none;
+}
+
+#wine-label-form .inside {
+    padding: 8px 12px;
+}

@@ -22,6 +22,8 @@ define('TB_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 class TB_Label_Maker
 {
+    protected $post_type = 'wine_label';
+
     /**
      * Plugin constructor. Runs all of the main methods to start the plugin.
      *
@@ -31,79 +33,121 @@ class TB_Label_Maker
      */
     public function __construct()
     {
-        add_action('admin_init', array($this, 'admin_init'));
+        add_action('init', array($this, 'register_cpt_wine_label'));
+
+        if (is_admin())
+        {
+            add_action('save_post', array($this, 'wine_label_form_mb_save'));
+
+            add_action('admin_head', array($this, 'admin_head'));
+            add_action('admin_init', array($this, 'admin_init'));
+
+            add_action('admin_head-post.php', array($this, 'cpt_hide_publishing_actions'));
+            add_action('admin_head-post-new.php', array($this, 'cpt_hide_publishing_actions'));
+            add_action('post_submitbox_misc_actions', array($this, 'cpt_custom_publishing_actions'));
+            add_filter('gettext', array($this, 'cpt_change_publish_button'), 10, 2);
+
+            // admin actions/filters
+            add_action('admin_footer-edit.php', array($this, 'custom_bulk_admin_footer'));
+            add_action('load-edit.php', array($this, 'custom_bulk_action'));
+        }
+
         add_action('admin_menu', array($this, 'admin_menu'));
     }
 
-    public function admin_init()
+    public function register_cpt_wine_label()
     {
-        $this->config = get_option('tb_label_maker_config');
+        $labels = array(
+            'name'                  => _x('Wine Labels', 'wine_label'),
+            'singular_name'         => _x('Wine Label', 'wine_label'),
+            'add_new'               => _x('Add New', 'wine_label'),
+            'add_new_item'          => _x('Add New Wine Label', 'wine_label'),
+            'edit_item'             => _x('Edit Wine Label', 'wine_label'),
+            'new_item'              => _x('New Wine Label', 'wine_label'),
+            'view_item'             => _x('View Wine Label', 'wine_label'),
+            'search_items'          => _x('Search Wine Labels', 'wine_label'),
+            'not_found'             => _x('No wine labels found', 'wine_label'),
+            'not_found_in_trash'    => _x('No wine labels found in Trash', 'wine_label'),
+            'parent_item_colon'     => _x('Parent Wine Label:', 'wine_label'),
+            'menu_name'             => _x('Wine Labels', 'wine_label'),
+        );
+
+        $args = array(
+            'labels'                => $labels,
+            'hierarchical'          => false,
+
+            'supports'              => array('title'),
+            'register_meta_box_cb'  => array($this, 'cpt_meta_boxes_cb'),
+
+            'public'                => false,
+            'show_ui'               => true,
+            'show_in_menu'          => true,
+            'menu_position'         => 100,
+
+            'show_in_nav_menus'     => false,
+            'publicly_queryable'    => false,
+            'exclude_from_search'   => true,
+            'has_archive'           => false,
+            'query_var'             => false,
+            'can_export'            => true,
+            'rewrite'               => false,
+            'capability_type'       => 'post',
+        );
+
+        register_post_type($this->post_type, $args);
     }
 
-    public function admin_menu()
+    public function cpt_meta_boxes_cb()
     {
-        $page = add_management_page('Vino Label Maker', 'Vino Label Maker', 'publish_pages', 'vino-label-maker', array($this, 'label_maker_form'));
-    
-        add_action('admin_print_styles-' . $page, array($this, 'admin_styles'));
-        add_action('admin_print_scripts-' . $page, array($this, 'admin_scripts'));
+        add_meta_box('wine-label-form', 'Wine Label', array($this, 'wine_label_form_mb'), $this->post_type, 'normal', 'high');
     }
 
-    public function admin_styles()
+    public function wine_label_form_mb($post)
     {
-        wp_enqueue_style('vino100-styles', TB_PLUGIN_URL . 'style.css');
-    }
 
-    public function admin_scripts()
-    {
-        echo '<script type="text/javascript">var vino100_plugin_url = "' . TB_PLUGIN_URL . '";</script>';
- 
-        wp_enqueue_script('vino100-meters', TB_PLUGIN_URL . 'meters.js', array(), false, true);
-        wp_enqueue_script('vino100-otherize', TB_PLUGIN_URL . 'jquery.otherize.js');
-    }
+        $meta = get_post_meta($post->ID, 'wine_data', true);
 
-    public function label_maker_form()
-    {
-        if (isset($_POST['createlabel']))
+        if (empty($meta))
         {
-            $this->save_new_options();
-            $this->build_label();
-            die('done');
+            $meta = array(
+                'desc'      => '',
+                'vendor'    => '',
+                'year'      => '',
+                'type'      => '',
+                'region'    => '',
+                'country'   => '',
+                'price'     => '',
+                'flavor'    => '',
+                'body'      => '',
+            );
         }
-        else
-        {
 
-?>
-<div class="wrap">
-    <h2>Vino100 Label Maker</h2>
-</div>
-
-<form action="" method="post" name="createlabel" id="createlabel" class="validate">
-
-<?php wp_nonce_field('vino100-label-maker'); ?>
-
+        ?>
 <table class="form-table">
-	<tr class="form-field form-required">
+    <?php wp_nonce_field('wine_label_maker', 'wine_label_maker'); ?>
+
+	<!--<tr class="form-field form-required">
 		<th scope="row"><label for="product_name">Product Name <span class="description">(required)</span></label></th>
 		<td><input name="product_name" type="text" id="product_name" class="regular-text" value="" aria-required="true" /></td>
-	</tr>
+	</tr>-->
 	<tr class="form-field">
 		<th scope="row"><label for="product_desc">Description </label></th>
-		<td><textarea name="product_desc" id="product_desc" rows="5" cols="30"></textarea></td>
+		<td><textarea name="desc" id="product_desc" rows="5" cols="30"><?php echo $meta['desc']; ?></textarea></td>
 	</tr>
 	<tr class="form-field">
 		<th scope="row"><label for="vendor">Vendor </label></th>
-		<td><input name="vendor" type="text" id="vendor" value="" /></td>
+		<td><input name="vendor" type="text" id="vendor" value="<?php echo $meta['vendor']; ?>" /></td>
 	</tr>
     <tr class="form-field">
         <th scope="row"><label for="year">Year </label></th>
-        <td><input name="year" type="text" id="year" value="" /></td>
+        <td><input name="year" type="text" id="year" value="<?php echo $meta['year']; ?>" /></td>
     </tr>
     <tr class="form-field">
 		<th scope="row"><label for="type">Wine Type </label></th>
 		<td>
             <select name="type" id="type">
                 <?php foreach ($this->config['types'] as $type): ?>
-                <option value="<?php echo $type['slug']; ?>"><?php echo $type['name']; ?></option>
+                <option value="<?php echo $type['slug']; ?>"<?php selected($type['slug'], $meta['type']); ?>><?php echo $type['name']; ?></option>
                 <?php endforeach; ?>
 
                 <option value="" disabled="disabled"></option>
@@ -115,7 +159,7 @@ class TB_Label_Maker
 		<td>
             <select name="region" id="region">
                 <?php foreach ($this->config['regions'] as $region): ?>
-                <option value="<?php echo $region['slug']; ?>"><?php echo $region['name']; ?></option>
+                <option value="<?php echo $region['slug']; ?>"<?php selected($region['slug'], $meta['region']); ?>><?php echo $region['name']; ?></option>
                 <?php endforeach; ?>
 
                 <option value="" disabled="disabled"></option>
@@ -126,8 +170,8 @@ class TB_Label_Maker
 		<th scope="row"><label for="country">Country / State </label></th>
 		<td>
             <select name="country" id="country">
-                <?php foreach ($this->config['countries'] as $type): ?>
-                <option value="<?php echo $type['slug']; ?>"><?php echo $type['name']; ?></option>
+                <?php foreach ($this->config['countries'] as $country): ?>
+                <option value="<?php echo $country['slug']; ?>"<?php selected($country['slug'], $meta['country']); ?>><?php echo $country['name']; ?></option>
                 <?php endforeach; ?>
 
                 <option value="" disabled="disabled"></option>
@@ -136,11 +180,14 @@ class TB_Label_Maker
 	</tr>
     <tr class="form-field">
 		<th scope="row"><label for="price">Price </label></th>
-		<td>$ <input name="price" type="text" id="price" value="" /></td>
+		<td>$ <input name="price" type="text" id="price" value="<?php echo $meta['price']; ?>" /></td>
 	</tr>
     <tr class="form-field">
         <th scope="row"><label for="ratings">Ratings </label></th>
         <td>
+            <input type="hidden" name="wine_flavor" value="<?php echo $meta['flavor']; ?>" />
+            <input type="hidden" name="wine_body" value="<?php echo $meta['body']; ?>" />
+
             <table border="0" cellpadding="0" cellspacing="0" style="font-family:arial; font-size:11px; color:#000000; width:244px;">
                 <tr>
                     <td align="left" width="25%"><em>Fruity</em></td>
@@ -234,8 +281,8 @@ class TB_Label_Maker
     </tr>
 </table>
 
-<p class="submit"><input type="submit" name="createlabel" id="createlabelsub" class="button button-primary" value="Create Label " /></p>
-</form>
+<?php if (!empty($meta['flavor'])): ?><script type="text/javascript">setTopBar(<?php echo $meta['flavor']; ?>);</script><?php endif; ?>
+<?php if (!empty($meta['body'])): ?><script type="text/javascript">setBotBar(<?php echo $meta['body']; ?>);</script><?php endif; ?>
 
 <script type="text/javascript">
 jQuery("#type").otherize("Add new type");
@@ -243,12 +290,415 @@ jQuery("#region").otherize("Add new region");
 jQuery("#country").otherize("Add new country");
 </script>
 <?php
+    }
+
+    public function wine_label_form_mb_save($post_id)
+    {
+        // Check if it is for our CPT and we are authorized
+        if (!isset($_POST['wine_label_maker'])
+            //|| !wp_verify_nonce($_POST['wine_label_maker'], 'wine_label_maker')
+            || !check_admin_referer('wine_label_maker', 'wine_label_maker')
+            || !current_user_can('edit_post', $post_id))
+        {
+            return $post_id;
+        }
+
+        // Don't duplicate data
+        if ($_POST['post_type'] == 'revision')
+        {
+            return;
+        }
+
+        // Save the info
+        $this->save_new_options();
+
+        $wine_meta = array(
+            //'name'      => $_POST['product_name'],
+            'desc'      => $_POST['desc'],
+            'vendor'    => $_POST['vendor'],
+            'year'      => $_POST['year'],
+            'type'      => $_POST['type'],
+            'region'    => $_POST['region'],
+            'country'   => $_POST['country'],
+            'price'     => $_POST['price'],
+            'flavor'    => $_POST['wine_flavor'],
+            'body'      => $_POST['wine_body'],
+        );
+
+        if (get_post_meta($post_id, 'wine_data', false))
+        {
+            update_post_meta($post_id, 'wine_data', $wine_meta);
+        }
+        else
+        {
+            add_post_meta($post_id, 'wine_data', $wine_meta);
         }
     }
 
-    public function label_maker_builder()
+    public function admin_head()
     {
-        check_admin_referer('vino100-label-maker');
+        global $post_type;
+
+        if ((isset($_GET['post_type']) && $_GET['post_type'] == $this->post_type) || ($post_type == $this->post_type))
+        {
+            echo '<link type="text/css" rel="stylesheet" href="' . TB_PLUGIN_URL . 'style.css" />';
+            echo '<script type="text/javascript">var vino100_plugin_url = "' . TB_PLUGIN_URL . '";</script>';
+            echo '<script type="text/javascript" src="' . TB_PLUGIN_URL . 'js/meters.js"></script>';
+            echo '<script type="text/javascript" src="' . TB_PLUGIN_URL . 'js/jquery.otherize.js"></script>';
+        }
+    }
+
+    public function admin_init()
+    {
+        $this->config = get_option('tb_label_maker_config');
+
+        if (isset($_GET['page']) && $_GET['page'] == 'print-labels')
+        {
+            ob_start();
+        }
+    }
+
+    public function cpt_hide_publishing_actions()
+    {
+        global $post;
+
+        if ($post->post_type == $this->post_type)
+        {
+            echo '<style type="text/css">
+            .misc-pub-post-status, .misc-pub-visibility, .misc-pub-curtime, #minor-publishing-actions { display:none; }
+            #misc-publishing-actions { padding-top: 0; }
+            </style>';
+        }
+    }
+
+    public function cpt_custom_publishing_actions()
+    {
+        global $post;
+
+        if ($post->post_type == $this->post_type && (isset($_GET['action']) && $_GET['action'] == 'edit'))
+        {
+            echo '<div class="misc-pub-section misc-pub-print"><a href="' . admin_url('edit.php?post_type=wine_label&paged=1&page=print-labels&ids='.$post->ID) .'">Print</a></div>';
+        }
+    }
+
+    public function cpt_change_publish_button($translation, $text)
+    {
+        if ($this->post_type == get_post_type() && 'Publish' == $text)
+        {
+            return 'Save';
+        }
+
+        return $translation;
+    }
+
+    public function custom_bulk_admin_footer()
+    {
+        global $post_type;
+
+        if ($post_type == $this->post_type)
+        {
+            ?>
+            <script type="text/javascript">
+                jQuery(document).ready(function() {
+                    jQuery('<option>').val('print').text('<?php _e('Print')?>').appendTo("select[name='action']");
+                    jQuery('<option>').val('print').text('<?php _e('Print')?>').appendTo("select[name='action2']");
+                });
+            </script>
+            <?php
+        }
+    }
+
+    public function custom_bulk_action()
+    {
+        global $typenow;
+        $post_type = $typenow;
+
+        if ($post_type == $this->post_type)
+        {
+            // get the action
+            $wp_list_table = _get_list_table('WP_Posts_List_Table');  // depending on your resource type this could be WP_Users_List_Table, WP_Comments_List_Table, etc
+            $action = $wp_list_table->current_action();
+
+            $allowed_actions = array('print');
+            if (!in_array($action, $allowed_actions))
+            {
+                return;
+            }
+
+            // security check
+            check_admin_referer('bulk-posts');
+
+            // make sure ids are submitted.  depending on the resource type, this may be 'media' or 'ids'
+            if (isset($_REQUEST['post']))
+            {
+                $post_ids = array_map('intval', $_REQUEST['post']);
+            }
+
+            if (empty($post_ids))
+            {
+                return;
+            }
+
+            // this is based on wp-admin/edit.php
+            $sendback = remove_query_arg(array('printed', 'untrashed', 'deleted', 'ids'), wp_get_referer());
+            if (!$sendback)
+            {
+                $sendback = admin_url('edit.php?post_type=' . $post_type);
+            }
+
+            $pagenum = $wp_list_table->get_pagenum();
+            $sendback = add_query_arg('paged', $pagenum, $sendback);
+
+            switch ($action)
+            {
+                case 'print':
+                    $sendback = add_query_arg(array('page' => 'print-labels', 'ids' => join(',', $post_ids)), $sendback);
+                break;
+
+                default:
+                    return;
+            }
+
+            $sendback = remove_query_arg(array('action', 'action2', 'tags_input', 'post_author', 'comment_status', 'ping_status', '_status',  'post', 'bulk_edit', 'post_view'), $sendback);
+
+            wp_redirect($sendback);
+            exit();
+        }
+    }
+
+    public function admin_menu()
+    {
+        $page = add_submenu_page('edit.php?post_type=wine_label', 'Print Labels', 'Print Labels', 'publish_posts', 'print-labels', array($this, 'print_labels'));
+
+        //$page = add_management_page('Vino Label Maker', 'Vino Label Maker', 'publish_pages', 'vino-label-maker', array($this, 'label_maker_form'));
+
+        add_action('admin_print_styles-' . $page, array($this, 'admin_styles'));
+        //add_action('admin_print_scripts-' . $page, array($this, 'admin_scripts'));
+    }
+
+    public function admin_styles()
+    {
+        wp_enqueue_style('wine-label-print-styles', TB_PLUGIN_URL . 'print.css');
+    }
+
+    public function admin_scripts()
+    {
+        echo '<script type="text/javascript">var vino100_plugin_url = "' . TB_PLUGIN_URL . '";</script>';
+
+        wp_enqueue_script('vino100-meters', TB_PLUGIN_URL . 'meters.js', array(), false, true);
+        wp_enqueue_script('vino100-otherize', TB_PLUGIN_URL . 'jquery.otherize.js');
+    }
+
+    /*public function print_labels()
+    {
+        ob_end_clean();
+        $labels = get_posts(array(
+            'include'       => $_GET['ids'],
+            'post_type'     => 'wine_label',
+            'post_status'   => 'publish',
+        ));
+
+        include TB_PLUGIN_DIR . 'lib/tcpdf/tcpdf.php';
+
+        $pdf = new TCPDF('L', 'mm', PDF_PAGE_FORMAT, true, 'UTF-8', false);
+        $pdf->setFontSubsetting(false);
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+
+        // Build label
+        $pdf->AddPage();
+
+        //$pdf->setCellPaddings(1, 1, 1, 1);
+        //$pdf->setCellMargins(1, 1, 1, 1);
+
+        //$pdf->Image(TB_PLUGIN_DIR . 'img/vino-logo.png', $pdf->GetAbsX() + 1, $pdf->GetY() - 0.15, 1.5, .85, 'png', '', 'top-left', true);
+        $pdf->Image(TB_PLUGIN_DIR . 'img/vino-logo.png', $pdf->GetAbsX() + 2, $pdf->GetY() + 2, 45, 0, 'png', '', 'top-left', true);
+
+        $pdf->Text($pdf->GetAbsX() + 2, $pdf->GetY() + 2, 'Red', false, false, true, 0, 0, 'R');
+
+        $pdf->MultiCell(101.6, 90, '', 1, 'C', 0, 0);
+
+        // Output PDF
+        $pdf->Output('qr-codes.pdf', 'I');
+        exit();
+    }*/
+
+    public function print_labels()
+    {
+        $labels = get_posts(array(
+            'include'       => $_GET['ids'],
+            'post_type'     => 'wine_label',
+            'post_status'   => 'publish',
+        ));
+
+?>
+<table>
+    <?php foreach ($labels as $label):
+        $meta = get_post_meta($label->ID, 'wine_data', true); ?>
+    <tr>
+        <td class="label">
+            <!--<table>
+                <tr>
+                    <td colspan="2" class="logo">
+                        <div class="bold right">Red</div>
+                        <br style="clear:both;" />
+                        <div class="bold right">Lodi, California</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><?php if (!empty($meta['vendor'])): ?><h3 class="text-center"><?php echo $meta['vendor']; ?></h3><?php endif; ?></td>
+                </tr>
+                <tr>
+                    <td><?php if (!empty($label->post_title)): ?><h3 class="text-center"><?php echo $label->post_title; ?><?php if (isset($meta)) { echo ' '.$meta['year']; } ?></h3><?php endif; ?></td>
+                </tr>
+                <tr>
+                    <td><?php if (!empty($meta['desc'])): ?><p class="text-center"><?php echo $meta['desc']; ?></p><?php endif; ?></td>
+                </tr>
+                <tr>
+                    <td><?php if (!empty($meta['price'])): ?>$<?php echo $meta['price']; ?><?php endif; ?></td>
+                </tr>
+            </table>-->
+            <div class="fill">
+                <div class="logo">
+                    <span><img class="logo-resize" src="<?php echo TB_PLUGIN_URL; ?>img/vino-logo.png" /></span>
+                    <span class="right">
+                        <div class="type bold text-center"><?php if (!empty($meta['type'])) { echo $this->get_option_name('types', $meta['type']); } ?></div>
+                        <!--<br class="clear" />-->
+                        <div class="region bold text-center"><?php
+                            if (!empty($meta['region']))
+                            {
+                                echo $this->get_option_name('regions', $meta['region']);
+                            }
+
+                            if (!empty($meta['region']) && !empty($meta['country']))
+                            {
+                                echo ', ';
+                            }
+
+                            if (!empty($meta['country']))
+                            {
+                                echo $this->get_option_name('countries', $meta['country']);
+                            }
+                        ?></div>
+                    </span>
+                </div>
+                <h3 class="vendor text-center"><?php if (!empty($meta['vendor'])) { echo $meta['vendor']; } else { echo '&nbsp;'; } ?></h3>
+                <h3 class="title text-center"><?php
+                    if (!empty($label->post_title))
+                    {
+                        echo $label->post_title;
+                    }
+
+                    if (!empty($meta['year']))
+                    {
+                        echo ' '.$meta['year'];
+                    }
+
+                    if (empty($label->post_title) && empty($meta['year']))
+                    {
+                        echo '&nbsp;';
+                    }
+                    ?></h3>
+                <?php if (!empty($meta['desc'])): ?><p class="desc text-center"><?php echo $meta['desc']; ?></p><?php endif; ?>
+                <!--<span class="price right"><?php if (!empty($meta['price'])) { echo $meta['price']; } ?></span>-->
+                <!--<?php if (!empty($meta['price'])): ?><span style="position: absolute; bottom: 0.8in; left: 3.65in;">$<?php echo $meta['price']; ?></span><?php endif; ?>-->
+            </div>
+            <div class="footer">
+                <span class="meters">
+                    <table class="meter-display" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td align="left" width="25%"><em>Fruity</em></td>
+                            <td align="center" width="50%"><strong>Flavor</strong></td>
+                            <td align="right" width="25%"><em>Dry</em></td>
+                        </tr>
+                    </table>
+
+                    <table class="meter-display bold" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <?php
+                            for ($i = 1; $i <= 14; $i++)
+                            {
+                                if (!empty($meta['flavor']))
+                                {
+                                    $color = ($i <= $meta['flavor']) ? 'red' : 'white';
+                                }
+                                else
+                                {
+                                    $color = 'white';
+                                }
+
+                                echo '<td><img width="18" height="14" src="' . TB_PLUGIN_URL . 'img/' . $color . '_' . $i . '.gif" /></td>';
+                            }
+                            ?>
+                            <!--<td><img height="15" name="t1" src="<?php echo TB_PLUGIN_URL; ?>img/white_1.gif" width="18" /></td>
+                            <td><img height="15" name="t2" src="<?php echo TB_PLUGIN_URL; ?>img/white_2.gif" width="18" /></td>
+                            <td><img height="15" name="t3" src="<?php echo TB_PLUGIN_URL; ?>img/white_3.gif" width="18" /></td>
+                            <td><img height="15" name="t4" src="<?php echo TB_PLUGIN_URL; ?>img/white_4.gif" width="18" /></td>
+                            <td><img height="15" name="t5" src="<?php echo TB_PLUGIN_URL; ?>img/white_5.gif" width="18" /></td>
+                            <td><img height="15" name="t6" src="<?php echo TB_PLUGIN_URL; ?>img/white_6.gif" width="18" /></td>
+                            <td><img height="15" name="t7" src="<?php echo TB_PLUGIN_URL; ?>img/white_7.gif" width="18" /></td>
+                            <td><img height="15" name="t8" src="<?php echo TB_PLUGIN_URL; ?>img/white_8.gif" width="18" /></td>
+                            <td><img height="15" name="t9" src="<?php echo TB_PLUGIN_URL; ?>img/white_9.gif" width="18" /></td>
+                            <td><img height="15" name="t10" src="<?php echo TB_PLUGIN_URL; ?>img/white_10.gif" width="18" /></td>
+                            <td><img height="15" name="t11" src="<?php echo TB_PLUGIN_URL; ?>img/white_11.gif" width="18" /></td>
+                            <td><img height="15" name="t12" src="<?php echo TB_PLUGIN_URL; ?>img/white_12.gif" width="18" /></td>
+                            <td><img height="15" name="t13" src="<?php echo TB_PLUGIN_URL; ?>img/white_13.gif" width="18" /></td>
+                            <td><img height="15" name="t14" src="<?php echo TB_PLUGIN_URL; ?>img/white_14.gif" width="18" /></td>-->
+                        </tr>
+                    </table>
+
+                    <table class="meter-display" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td align="left" width="25%"><em>Light</em></td>
+                            <td align="center" width="50%"><strong>Body</strong></td>
+                            <td align="right" width="25%"><em>Full</em></td>
+                        </tr>
+                    </table>
+
+                    <table class="meter-display bold" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <?php
+                            for ($i = 1; $i <= 14; $i++)
+                            {
+                                if (!empty($meta['body']))
+                                {
+                                    $color = ($i <= $meta['body']) ? 'red' : 'white';
+                                }
+                                else
+                                {
+                                    $color = 'white';
+                                }
+
+                                echo '<td><img width="18" height="14" src="' . TB_PLUGIN_URL . 'img/' . $color . '_' . $i . '.gif" /></td>';
+                            }
+                            ?>
+                            <!--<td><img height="15" name="b1" src="<?php echo TB_PLUGIN_URL; ?>img/white_1.gif" width="18" /></td>
+                            <td><img height="15" name="b2" src="<?php echo TB_PLUGIN_URL; ?>img/white_2.gif" width="18" /></td>
+                            <td><img height="15" name="b3" src="<?php echo TB_PLUGIN_URL; ?>img/white_3.gif" width="18" /></td>
+                            <td><img height="15" name="b4" src="<?php echo TB_PLUGIN_URL; ?>img/white_4.gif" width="18" /></td>
+                            <td><img height="15" name="b5" src="<?php echo TB_PLUGIN_URL; ?>img/white_5.gif" width="18" /></td>
+                            <td><img height="15" name="b6" src="<?php echo TB_PLUGIN_URL; ?>img/white_6.gif" width="18" /></td>
+                            <td><img height="15" name="b7" src="<?php echo TB_PLUGIN_URL; ?>img/white_7.gif" width="18" /></td>
+                            <td><img height="15" name="b8" src="<?php echo TB_PLUGIN_URL; ?>img/white_8.gif" width="18" /></td>
+                            <td><img height="15" name="b9" src="<?php echo TB_PLUGIN_URL; ?>img/white_9.gif" width="18" /></td>
+                            <td><img height="15" name="b10" src="<?php echo TB_PLUGIN_URL; ?>img/white_10.gif" width="18" /></td>
+                            <td><img height="15" name="b11" src="<?php echo TB_PLUGIN_URL; ?>img/white_11.gif" width="18" /></td>
+                            <td><img height="15" name="b12" src="<?php echo TB_PLUGIN_URL; ?>img/white_12.gif" width="18" /></td>
+                            <td><img height="15" name="b13" src="<?php echo TB_PLUGIN_URL; ?>img/white_13.gif" width="18" /></td>
+                            <td><img height="15" name="b14" src="<?php echo TB_PLUGIN_URL; ?>img/white_14.gif" width="18" /></td>-->
+                        </tr>
+                    </table>
+                </span>
+                <span class="price right bold"><?php if (!empty($meta['price'])) { echo '$' . $meta['price']; } ?></span>
+            </div>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+</table>
+<?php
     }
 
     protected function save_new_options()
@@ -280,9 +730,23 @@ jQuery("#country").otherize("Add new country");
         update_option('tb_label_maker_config', $this->config);
     }
 
-    protected function build_label()
+    protected function get_option_name($class, $slug)
     {
-        
+        if (!isset($this->config[$class]))
+        {
+            // We don't have this in our options
+            return '';
+        }
+
+        foreach ($this->config[$class] as $i => $ary)
+        {
+            if ($this->config[$class][$i]['slug'] == $slug)
+            {
+                return $this->config[$class][$i]['name'];
+            }
+        }
+
+        return '';
     }
 
     protected function in_multiarray($elem, $array)

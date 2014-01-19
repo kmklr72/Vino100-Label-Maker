@@ -280,7 +280,7 @@ function setTopBar(sbarn) {
             topbar[x] = vino100_plugin_url + 'img/white_' + x + '.gif';
         }
     }
-    document.pform.wine_flavor.value = sbarn;
+    document.forms['post'].wine_flavor.value = sbarn;
     revTopBar();
 }
 
@@ -294,6 +294,6 @@ function setBotBar(sbarn) {
             botbar[x] = vino100_plugin_url + 'img/white_' + x + '.gif';
         }
     }
-    document.pform.wine_body.value = sbarn;
+    document.forms['post'].wine_body.value = sbarn;
     revBotBar();
 }

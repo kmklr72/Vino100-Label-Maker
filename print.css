@@ -1,0 +1,142 @@
+* {
+    color: #000;
+}
+
+html, body {
+    margin: 0;
+    padding: 0 !important;
+    background: none;
+    font-size: 100%;
+}
+
+#adminmenuback, #adminmenuwrap, #wpadminbar, #wpfooter {
+    display: none;
+}
+
+#wpcontent {
+    margin-left: 0;
+}
+
+#wpbody-content {
+    padding: 0;
+}
+
+/*.label {
+    width: 384px;
+    height: 294px;
+    width: 4in;
+    height: 90mm;
+    border: #000 solid 1px;
+    position: relative;
+}
+
+.text-center {
+    text-align: center;
+}*/
+
+h3, p {
+    margin: 0;
+}
+
+p {
+    line-height: 1.1;
+}
+
+.label {
+    width: 101.6mm;
+    max-height: 90mm;
+    border: #000 solid 2px;
+}
+
+.fill {
+    height: 63mm;
+    /*min-height: 100%;
+    margin-bottom: -20mm;*/
+}
+
+.fill:after {
+    /*content: "";
+    display: block;
+    height: 20mm;*/
+}
+
+.label td {
+    border: #000 solid 1px;
+}
+
+.logo {
+    /*background-image: url('./img/vino-logo.png');
+    background-size: auto 15mm;
+    background-repeat: no-repeat;*/
+    height: 20mm;
+    margin: 1mm 5mm 1mm 1mm;
+    padding-bottom: 2mm;
+}
+
+img.logo-resize {
+    width: auto;
+    height: 17mm;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.right {
+    float: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.type {
+    font-size: 15px;
+    padding-top: 1mm;
+    padding-bottom: 2mm;
+}
+
+.region {
+    font-size: 15px;
+}
+
+.vendor, .title {
+    /*height: 15mm;*/
+    /*padding-bottom: 1mm;*/
+    min-height: 8mm;
+    max-height: 16mm;
+    overflow: hidden;
+}
+
+.footer {
+    height: 25mm;
+}
+
+.meters {
+    float: left;
+    margin-left: 3mm;
+}
+
+.meter-display {
+    font-family: arial;
+    font-size: 11px;
+    width: 244px;
+}
+
+.meters td {
+    border: none;
+}
+
+.price {
+    /*display: inline-block;
+    line-height: 20mm;
+    vertical-align: bottom;*/
+    margin-top: 17mm;
+    margin-right: 2mm;
+    font-size: 20px;
+}
+
+/*.vendor, .title {
+    padding-top: 2mm;
+    padding-bottom: 2mm;
+}*/
