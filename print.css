@@ -1,3 +1,112 @@
+/** {
+    color: #000;
+}
+
+html, body {
+    margin: 0;
+    padding: 0 !important;
+    background: none;
+    font-size: 100%;
+}
+
+#adminmenuback, #adminmenuwrap, #wpadminbar, #wpfooter {
+    display: none;
+}
+
+#wpcontent {
+    margin-left: 0;
+}
+
+#wpbody-content {
+    padding: 0;
+}
+
+h3, p {
+    margin: 0;
+}
+
+p {
+    line-height: 1.1;
+}
+
+.label {
+    width: 288pt;
+    max-height: 255pt;
+    border: #000 solid 2px;
+}
+
+.fill {
+    height: 178pt;
+}
+
+.label td {
+    border: #000 solid 1px;
+}
+
+.logo {
+    height: 57pt;
+    margin: 5pt 14pt 3pt 5pt;
+    padding-bottom: 5pt;
+}
+
+img.logo-resize {
+    width: auto;
+    height: 48pt;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.right {
+    float: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.type {
+    font-size: 15px;
+    padding-top: 3pt;
+    padding-bottom: 5pt;
+}
+
+.region {
+    font-size: 15px;
+}
+
+.vendor, .title {
+    min-height: 22.5pt;
+    max-height: 45pt;
+    overflow: hidden;
+}
+
+.footer {
+    height: 71pt;
+}
+
+.meters {
+    float: left;
+    margin-left: 8pt;
+}
+
+.meter-display {
+    font-family: arial;
+    font-size: 11px;
+    width: 244px;
+}
+
+.meters td {
+    border: none;
+}
+
+.price {
+    margin-top: 48pt;
+    margin-right: 5pt;
+    font-size: 20px;
+}*/
+
 * {
     color: #000;
 }

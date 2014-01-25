@@ -95,6 +95,8 @@ class TB_Label_Maker
         );
 
         register_post_type($this->post_type, $args);
+
+        ob_start();
     }
 
     public function cpt_meta_boxes_cb()
@@ -485,6 +487,185 @@ jQuery("#country").otherize("Add new country");
 
     public function print_labels()
     {
+        ob_end_clean();
+
+        $labels = get_posts(array(
+            'include'       => $_GET['ids'],
+            'post_type'     => 'wine_label',
+            'post_status'   => 'publish',
+        ));
+
+        list($logo_width, $logo_height) = getimagesize(TB_PLUGIN_DIR . 'img/vino-logo.png');
+
+        require TB_PLUGIN_DIR . 'lib/tcpdf/tcpdf.php';
+
+        $pdf = new TCPDF('L', 'mm', 'LETTER');
+
+        $pdf->SetMargins(PDF_MARGIN_LEFT, 10, PDF_MARGIN_BOTTOM);
+        $pdf->SetPrintHeader(false);
+        $pdf->SetPrintFooter(false);
+        $pdf->SetAutoPageBreak(true, 5);
+
+        $pdf->AddPage();
+
+        $cell_w = 101.6;
+        $cell_h = 90;
+        $_base_x = $pdf->GetAbsX();
+        $_base_y = $pdf->GetY();
+
+        $count = 1;
+        foreach ($labels as $label)
+        {
+            // Build new page if needed
+            if ($count == 5)
+            {
+                $cont = 1;
+                $pdf->AddPage();
+            }
+
+            $meta = get_post_meta($label->ID, 'wine_data', true);
+
+            switch ($count)
+            {
+                case 1:
+                    $base_x = $_base_x;
+                    $base_y = $_base_y;
+                break;
+
+                case 2:
+                    $base_x = $_base_x + 110;
+                break;
+
+                case 3:
+                    $base_x = $_base_x;
+                    $base_y = $_base_y + 95;
+                break;
+
+                case 4:
+                    $base_x = $_base_x + 110;
+                    $base_y = $_base_y + 95;
+                break;
+            }
+
+            // Logo
+            $pdf->Image(TB_PLUGIN_DIR . 'img/vino-logo.png', $base_x + 2, $base_y + 2, 45, 0, 'png', '', 'top-left', true);
+
+            // Wine type and Region / Country
+            $region = '';
+            if (!empty($meta['region']))
+            {
+                $region .= $this->get_option_name('regions', $meta['region']);
+            }
+
+            if (!empty($meta['region']) && !empty($meta['country']))
+            {
+                $region .= ', ';
+            }
+
+            if (!empty($meta['country']))
+            {
+                $region .= $this->get_option_name('countries', $meta['country']);
+            }
+
+            $pdf->writeHTMLCell(50, 10, $base_x + $cell_w - 50, $base_y + 3,
+                '<strong>'.$this->get_option_name('types', $meta['type']).'<br /><br />'.$region.'</strong>', 0, 0, false, true, 'C');
+
+            // Main content
+            $html = '<h3 style="line-height: 4mm;">' . (!empty($meta['vendor']) ? $meta['vendor'] : '') . '</h3>';
+            $html .= '<h3 style="line-height: 4mm;">' . (!empty($label->post_title) ? $label->post_title . ' ' : '') .
+                //'MMMMMMMMMMM' .
+                (isset($meta['year']) ? $meta['year'] : '') . '</h3>';
+            $html .= '<p style="font-size: 10px;">' . (!empty($meta['desc']) ? $meta['desc'] : '') . '</p>';
+            $pdf->writeHTMLCell($cell_w - 2, $cell_h - 27, $base_x, $base_y + 27, $html, 0, 0, false, true, 'C');
+
+            // Meters
+            $html = '<table border="0" cellpadding="0" cellspacing="0" style="font-family:arial; font-size:11px; width:55mm;">
+                        <thead>
+                            <tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr>
+                        </thead>
+                        <tr style="line-height:5px;">
+                            <td align="center" colspan="14" style="font-size:8px;">Vino 100 Taste Barometer</td>
+                        </tr>
+                        <tr style="line-height:5px;">
+                            <td colspan="14">
+                                <table style="font-size:8px; width:100%;">
+                                    <thead><tr><th></th><th></th><th></th></tr></thead>
+                                    <tr style="line-height:5px;">
+                                        <td align="left" width="25%"><em>Fruity</em></td>
+                                        <td align="center" width="50%"><strong>Flavor</strong></td>
+                                        <td align="right" width="25%"><em>Dry</em></td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>';
+
+            for ($i = 1; $i <= 14; $i++)
+            {
+                if (!empty($meta['flavor']))
+                {
+                    $color = ($i <= $meta['flavor']) ? 'red' : 'white';
+                }
+                else
+                {
+                    $color = 'white';
+                }
+
+                $html .= '<td><img width="14" height="8" src="' . TB_PLUGIN_URL . 'img/' . $color . '_' . $i . '.gif" /></td>';
+            }
+
+            $html .= '            </tr>
+
+                        <tr style="line-height:8px;">
+                            <td colspan="14">
+                                <table style="font-size:8px; width:100%;">
+                                    <thead><tr><th></th><th></th><th></th></tr></thead>
+                                    <tr>
+                                        <td align="left" width="25%"><em>Light</em></td>
+                                        <td align="center" width="50%"><strong>Body</strong></td>
+                                        <td align="right" width="25%"><em>Full</em></td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>';
+
+            for ($i = 1; $i <= 14; $i++)
+            {
+                if (!empty($meta['body']))
+                {
+                    $color = ($i <= $meta['body']) ? 'red' : 'white';
+                }
+                else
+                {
+                    $color = 'white';
+                }
+
+                $html .= '<td><img width="14" height="8" src="' . TB_PLUGIN_URL . 'img/' . $color . '_' . $i . '.gif" /></td>';
+            }
+
+            $html .= '            </tr>
+                    </table>';
+            //die($html);
+
+            $pdf->writeHTMLCell(30, 10, $base_x + 2, $base_y + $cell_h - 24, $html);
+
+            // Price
+            $html = (!empty($meta['price'])) ? '<h2>$' . $meta['price'] . '</h2>' : ' ';
+            $pdf->writeHTMLCell(20, 10, $base_x + $cell_w - 20, $base_y + $cell_h - 8, $html, 0, 0, false, true, 'R');
+
+            $pdf->MultiCell($cell_w, $cell_h, '', 1, 'C', 0, 0, $base_x, $base_y);
+
+            $count++;
+        }
+
+        // Output PDF
+        $pdf->Output('labels.pdf', 'I');
+        exit();
+    }
+
+    /*public function print_labels()
+    {
         $labels = get_posts(array(
             'include'       => $_GET['ids'],
             'post_type'     => 'wine_label',
@@ -605,7 +786,7 @@ jQuery("#country").otherize("Add new country");
     <?php endforeach; ?>
 </table>
 <?php
-    }
+    }*/
 
     protected function save_new_options()
     {
